@@ -1,8 +1,45 @@
-import { createAuthClient } from "better-auth/react";
 import { env } from "~/env/client";
 
-const authClient = createAuthClient({
-  baseURL: env.VITE_BASE_URL,
-});
+async function request<T>(path: string, init?: RequestInit) {
+  const res = await fetch(`${env.VITE_BASE_URL}${path}`.replace(/\/$/, "") , {
+    credentials: "include",
+    headers: {
+      "content-type": "application/json",
+      ...(init?.headers || {}),
+    },
+    ...init,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Request failed");
+  }
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) return (await res.json()) as T;
+  return undefined as unknown as T;
+}
 
-export default authClient;
+export const AuthClient = {
+  async signup(params: { name: string; email: string; password: string }) {
+    return request<{ ok: boolean }>(`/api/auth/?action=signup`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+  async login(params: { email: string; password: string }) {
+    return request<{ ok: boolean }>(`/api/auth/?action=login`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+  async logout() {
+    return request<{ ok: boolean }>(`/api/auth/?action=logout`, { method: "POST" });
+  },
+  async me() {
+    return request<{ id: string; name: string; email: string; image: string | null } | null>(
+      `/api/auth/?action=me`,
+      { method: "GET" },
+    );
+  },
+};
+
+export default AuthClient;
