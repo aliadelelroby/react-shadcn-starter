@@ -1,4 +1,4 @@
-import { getWebRequest, getWebResponse } from "@tanstack/react-start/server";
+import { getWebRequest } from "@tanstack/react-start/server";
 import { and, eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { addDays } from "date-fns";
@@ -42,17 +42,15 @@ export async function createSession(userId: string, userAgent?: string | null, i
     ipAddress: ipAddress ?? undefined,
   });
 
-  const res = getWebResponse();
-  res.headers.append(
-    "Set-Cookie",
-    serializeCookie(SESSION_COOKIE_NAME, token, {
+  return {
+    cookie: serializeCookie(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       path: "/",
       expires: expiresAt,
     }),
-  );
+  };
 }
 
 export async function destroySession() {
@@ -62,11 +60,10 @@ export async function destroySession() {
   if (token) {
     await db.delete(session).where(eq(session.token, token));
   }
-  const res = getWebResponse();
-  res.headers.append(
-    "Set-Cookie",
-    serializeCookie(SESSION_COOKIE_NAME, "", { path: "/", expires: new Date(0) }),
-  );
+  
+  return {
+    cookie: serializeCookie(SESSION_COOKIE_NAME, "", { path: "/", expires: new Date(0) }),
+  };
 }
 
 export async function getSessionUser() {
