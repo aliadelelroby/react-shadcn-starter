@@ -11,8 +11,8 @@ export function SignOutButton() {
     <Button
       onClick={async () => {
         await AuthClient.logout();
-        queryClient.setQueryData(authQueryOptions().queryKey, null);
-        await router.invalidate();
+        // Refresh the page to update auth state
+        window.location.reload();
       }}
       type="button"
       className="w-fit"

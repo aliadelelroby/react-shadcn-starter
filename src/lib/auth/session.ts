@@ -1,4 +1,4 @@
-import { getWebRequest } from "@tanstack/react-start/server";
+import { getCookie, setCookie } from "@tanstack/react-start/server";
 import { and, eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { addDays } from "date-fns";
@@ -7,27 +7,6 @@ import { account, session, user as userTable } from "~/lib/db/schema";
 
 const SESSION_COOKIE_NAME = "session_token";
 const SESSION_DAYS = 7;
-
-function parseCookie(header: string | null): Record<string, string> {
-  const result: Record<string, string> = {};
-  if (!header) return result;
-  for (const part of header.split(";")) {
-    const [k, ...rest] = part.trim().split("=");
-    if (!k) continue;
-    result[k] = decodeURIComponent(rest.join("="));
-  }
-  return result;
-}
-
-function serializeCookie(name: string, value: string, opts: { expires?: Date; path?: string; httpOnly?: boolean; sameSite?: "lax" | "strict" | "none"; secure?: boolean } = {}) {
-  const segments = [`${name}=${encodeURIComponent(value)}`];
-  if (opts.expires) segments.push(`Expires=${opts.expires.toUTCString()}`);
-  if (opts.path) segments.push(`Path=${opts.path}`);
-  if (opts.httpOnly) segments.push("HttpOnly");
-  if (opts.sameSite) segments.push(`SameSite=${opts.sameSite}`);
-  if (opts.secure) segments.push("Secure");
-  return segments.join("; ");
-}
 
 export async function createSession(userId: string, userAgent?: string | null, ipAddress?: string | null) {
   const token = randomBytes(32).toString("hex");
@@ -42,34 +21,33 @@ export async function createSession(userId: string, userAgent?: string | null, i
     ipAddress: ipAddress ?? undefined,
   });
 
-  return {
-    cookie: serializeCookie(SESSION_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      expires: expiresAt,
-    }),
-  };
+  setCookie(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_DAYS * 24 * 60 * 60, // Convert days to seconds
+  });
+
+  return { success: true };
 }
 
 export async function destroySession() {
-  const req = getWebRequest();
-  const cookies = parseCookie(req.headers.get("cookie"));
-  const token = cookies[SESSION_COOKIE_NAME];
+  const token = getCookie(SESSION_COOKIE_NAME);
   if (token) {
     await db.delete(session).where(eq(session.token, token));
   }
   
-  return {
-    cookie: serializeCookie(SESSION_COOKIE_NAME, "", { path: "/", expires: new Date(0) }),
-  };
+  setCookie(SESSION_COOKIE_NAME, "", {
+    path: "/",
+    maxAge: 0,
+  });
+
+  return { success: true };
 }
 
 export async function getSessionUser() {
-  const req = getWebRequest();
-  const cookies = parseCookie(req.headers.get("cookie"));
-  const token = cookies[SESSION_COOKIE_NAME];
+  const token = getCookie(SESSION_COOKIE_NAME);
   if (!token) return null;
 
   const rows = await db

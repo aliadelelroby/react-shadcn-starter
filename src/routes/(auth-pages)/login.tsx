@@ -30,7 +30,8 @@ function LoginForm() {
 
     try {
       await AuthClient.login({ email, password });
-      window.location.assign(redirectUrl);
+      // Refresh the page to update auth state
+      window.location.reload();
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Login failed");
       setIsLoading(false);
