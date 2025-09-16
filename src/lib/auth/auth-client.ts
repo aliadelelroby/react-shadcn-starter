@@ -14,6 +14,7 @@ function getBaseUrl() {
 }
 
 async function request<T>(url: string, init?: RequestInit) {
+  console.log("Making request to:", url, "with options:", init);
   const res = await fetch(url, {
     credentials: "include",
     headers: {
@@ -22,12 +23,18 @@ async function request<T>(url: string, init?: RequestInit) {
     },
     ...init,
   });
+  console.log("Response status:", res.status, "headers:", Object.fromEntries(res.headers.entries()));
   if (!res.ok) {
     const text = await res.text();
+    console.log("Request failed with error:", text);
     throw new Error(text || "Request failed");
   }
   const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return (await res.json()) as T;
+  if (contentType.includes("application/json")) {
+    const data = await res.json();
+    console.log("Response data:", data);
+    return data as T;
+  }
   return undefined as unknown as T;
 }
 

@@ -12,6 +12,8 @@ export async function createSession(userId: string, userAgent?: string | null, i
   const token = randomBytes(32).toString("hex");
   const expiresAt = addDays(new Date(), SESSION_DAYS);
 
+  console.log("Creating session for user:", userId, "with token:", token);
+
   await db.insert(session).values({
     id: token,
     token,
@@ -21,6 +23,8 @@ export async function createSession(userId: string, userAgent?: string | null, i
     ipAddress: ipAddress ?? undefined,
   });
 
+  console.log("Session created in database, setting cookie...");
+
   setCookie(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -28,6 +32,8 @@ export async function createSession(userId: string, userAgent?: string | null, i
     path: "/",
     maxAge: SESSION_DAYS * 24 * 60 * 60, // Convert days to seconds
   });
+
+  console.log("Cookie set successfully");
 
   return { success: true };
 }

@@ -42,8 +42,8 @@ function SignupForm() {
 
     try {
       await AuthClient.signup({ name, email, password });
-      queryClient.removeQueries({ queryKey: authQueryOptions().queryKey });
-      navigate({ to: redirectUrl });
+      // Refresh the page to update auth state
+      window.location.reload();
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Signup failed");
       setIsLoading(false);
