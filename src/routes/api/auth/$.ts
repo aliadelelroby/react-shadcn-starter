@@ -56,14 +56,8 @@ export const ServerRoute = createServerFileRoute("/api/auth/$").methods({
 
       console.log("User created, creating session...");
       const sessionResult = await createSession(id, request.headers.get("user-agent"), request.headers.get("x-forwarded-for"));
-      console.log("Signup completed successfully, cookie:", sessionResult.cookie);
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Set-Cookie": sessionResult.cookie,
-        },
-      });
+      console.log("Signup completed successfully");
+      return Response.json({ ok: true, token: sessionResult.token });
     }
 
     if (action === "login") {
@@ -82,24 +76,12 @@ export const ServerRoute = createServerFileRoute("/api/auth/$").methods({
       if (!user) return new Response("Invalid credentials", { status: 401 });
 
       const sessionResult = await createSession(user.id, request.headers.get("user-agent"), request.headers.get("x-forwarded-for"));
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Set-Cookie": sessionResult.cookie,
-        },
-      });
+      return Response.json({ ok: true, token: sessionResult.token });
     }
 
     if (action === "logout") {
-      const sessionResult = await destroySession();
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Set-Cookie": sessionResult.cookie,
-        },
-      });
+      await destroySession();
+      return Response.json({ ok: true });
     }
 
     return new Response("Not Found", { status: 404 });

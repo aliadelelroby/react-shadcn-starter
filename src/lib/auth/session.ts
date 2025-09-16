@@ -23,17 +23,19 @@ export async function createSession(userId: string, userAgent?: string | null, i
     ipAddress: ipAddress ?? undefined,
   });
 
-  console.log("Session created in database, returning cookie data...");
+  console.log("Session created in database, setting cookie...");
 
-  // Return cookie data instead of trying to set it directly
-  const cookieValue = `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_DAYS * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
+  setCookie(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: true, // Always secure for iframe contexts
+    sameSite: "none", // Allow cross-site cookies for iframe
+    path: "/",
+    maxAge: SESSION_DAYS * 24 * 60 * 60, // Convert days to seconds
+  });
 
-  console.log("Cookie string:", cookieValue);
+  console.log("Cookie set successfully");
 
-  return { 
-    success: true, 
-    cookie: cookieValue 
-  };
+  return { success: true, token };
 }
 
 export async function destroySession() {
@@ -42,13 +44,14 @@ export async function destroySession() {
     await db.delete(session).where(eq(session.token, token));
   }
   
-  // Return cookie data to clear the cookie
-  const cookieValue = `${SESSION_COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`;
+  setCookie(SESSION_COOKIE_NAME, "", {
+    path: "/",
+    maxAge: 0,
+    secure: true,
+    sameSite: "none",
+  });
 
-  return { 
-    success: true, 
-    cookie: cookieValue 
-  };
+  return { success: true };
 }
 
 export async function getSessionUser() {

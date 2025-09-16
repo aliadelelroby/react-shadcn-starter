@@ -38,21 +38,44 @@ async function request<T>(url: string, init?: RequestInit) {
   return undefined as unknown as T;
 }
 
+const TOKEN_STORAGE_KEY = "session_token";
+
 export const AuthClient = {
   async signup(params: { name: string; email: string; password: string }) {
-    return request<{ ok: boolean }>(`${getBaseUrl()}/api/auth/?action=signup`, {
+    const result = await request<{ ok: boolean; token?: string }>(`${getBaseUrl()}/api/auth/?action=signup`, {
       method: "POST",
       body: JSON.stringify(params),
     });
+    
+    // Store token in localStorage as fallback for iframe contexts
+    if (result.token && typeof window !== "undefined") {
+      localStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+    }
+    
+    return result;
   },
   async login(params: { email: string; password: string }) {
-    return request<{ ok: boolean }>(`${getBaseUrl()}/api/auth/?action=login`, {
+    const result = await request<{ ok: boolean; token?: string }>(`${getBaseUrl()}/api/auth/?action=login`, {
       method: "POST",
       body: JSON.stringify(params),
     });
+    
+    // Store token in localStorage as fallback for iframe contexts
+    if (result.token && typeof window !== "undefined") {
+      localStorage.setItem(TOKEN_STORAGE_KEY, result.token);
+    }
+    
+    return result;
   },
   async logout() {
-    return request<{ ok: boolean }>(`${getBaseUrl()}/api/auth/?action=logout`, { method: "POST" });
+    const result = await request<{ ok: boolean }>(`${getBaseUrl()}/api/auth/?action=logout`, { method: "POST" });
+    
+    // Clear token from localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+    
+    return result;
   },
   async me() {
     return request<{ id: string; name: string; email: string; image: string | null } | null>(
