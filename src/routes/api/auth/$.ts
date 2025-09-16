@@ -55,9 +55,15 @@ export const ServerRoute = createServerFileRoute("/api/auth/$").methods({
       await db.insert(account).values({ id: crypto.randomUUID(), userId: id, providerId: "credentials", accountId: email, password });
 
       console.log("User created, creating session...");
-      await createSession(id, request.headers.get("user-agent"), request.headers.get("x-forwarded-for"));
-      console.log("Signup completed successfully");
-      return Response.json({ ok: true });
+      const sessionResult = await createSession(id, request.headers.get("user-agent"), request.headers.get("x-forwarded-for"));
+      console.log("Signup completed successfully, cookie:", sessionResult.cookie);
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": sessionResult.cookie,
+        },
+      });
     }
 
     if (action === "login") {
@@ -75,13 +81,25 @@ export const ServerRoute = createServerFileRoute("/api/auth/$").methods({
       const user = row?.[0];
       if (!user) return new Response("Invalid credentials", { status: 401 });
 
-      await createSession(user.id, request.headers.get("user-agent"), request.headers.get("x-forwarded-for"));
-      return Response.json({ ok: true });
+      const sessionResult = await createSession(user.id, request.headers.get("user-agent"), request.headers.get("x-forwarded-for"));
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": sessionResult.cookie,
+        },
+      });
     }
 
     if (action === "logout") {
-      await destroySession();
-      return Response.json({ ok: true });
+      const sessionResult = await destroySession();
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": sessionResult.cookie,
+        },
+      });
     }
 
     return new Response("Not Found", { status: 404 });
