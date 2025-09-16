@@ -2,5 +2,6 @@ apps:
   - name: web
     port: 3000
     subdomain: web
+    preview: true
 
 
