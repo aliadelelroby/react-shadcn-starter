@@ -39,7 +39,7 @@ A minimal starter template for 🏝️ TanStack Start. [→ Preview here](https:
    pnpm dev
    ```
 
-   The development server should now be running at [http://localhost:3000](http://localhost:3000).
+   The development server should now be running at the URL specified by `VITE_BASE_URL` (defaults to http://localhost:3000).
 
 ## Issue watchlist
 

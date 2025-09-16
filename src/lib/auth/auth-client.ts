@@ -1,7 +1,7 @@
 import { env } from "~/env/client";
 
-async function request<T>(path: string, init?: RequestInit) {
-  const res = await fetch(`${env.VITE_BASE_URL}${path}`.replace(/\/$/, "") , {
+async function request<T>(url: string, init?: RequestInit) {
+  const res = await fetch(url, {
     credentials: "include",
     headers: {
       "content-type": "application/json",
@@ -20,23 +20,23 @@ async function request<T>(path: string, init?: RequestInit) {
 
 export const AuthClient = {
   async signup(params: { name: string; email: string; password: string }) {
-    return request<{ ok: boolean }>(`/api/auth/?action=signup`, {
+    return request<{ ok: boolean }>(`${env.VITE_BASE_URL}/api/auth/?action=signup`, {
       method: "POST",
       body: JSON.stringify(params),
     });
   },
   async login(params: { email: string; password: string }) {
-    return request<{ ok: boolean }>(`/api/auth/?action=login`, {
+    return request<{ ok: boolean }>(`${env.VITE_BASE_URL}/api/auth/?action=login`, {
       method: "POST",
       body: JSON.stringify(params),
     });
   },
   async logout() {
-    return request<{ ok: boolean }>(`/api/auth/?action=logout`, { method: "POST" });
+    return request<{ ok: boolean }>(`${env.VITE_BASE_URL}/api/auth/?action=logout`, { method: "POST" });
   },
   async me() {
     return request<{ id: string; name: string; email: string; image: string | null } | null>(
-      `/api/auth/?action=me`,
+      `${env.VITE_BASE_URL}/api/auth/?action=me`,
       { method: "GET" },
     );
   },
