@@ -4,7 +4,7 @@ import * as z from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.url(),
-    VITE_BASE_URL: z.url().default("http://localhost:3000"),
+    VITE_BASE_URL: z.string().url().optional(),
   },
   runtimeEnv: process.env,
 });
